@@ -22,7 +22,6 @@ RUN CGO_ENABLED=0 go build \
     -tags "osusergo,netgo" \
     -ldflags="-s -w -X github.com/filebrowser/filebrowser/v2/version.CommitSHA=$(git rev-parse --short HEAD 2>/dev/null || echo 'dev') -X github.com/filebrowser/filebrowser/v2/version.Version=$(git describe --tags 2>/dev/null || echo 'latest')" \
     -o /usr/bin/filebrowser . && \
-    file /usr/bin/filebrowser && \
     echo "Binary size:" && ls -lh /usr/bin/filebrowser
 
 # Stage 3: Runtime — Alpine slim

@@ -6,6 +6,9 @@ on:
   push:
     branches: [main]
 
+env:
+  GHCR_OWNER: dynamickarabo
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -35,14 +38,14 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          tags: ghcr.io/${{ env.GHCR_OWNER }}/filebrowser-deployment:${{ github.sha }}
           load: true
 
       - name: Quick smoke test
         run: |
           docker run --rm -d --name filebrowser-test -p 8080:8080 \
             -e FB_PORT=8080 \
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ env.GHCR_OWNER }}/filebrowser-deployment:${{ github.sha }}
           sleep 3
           curl -sf http://localhost:8080/health || exit 1
           echo "Healthcheck passed ✅"
@@ -51,7 +54,7 @@ jobs:
       - name: Trivy vulnerability scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          image-ref: ghcr.io/${{ env.GHCR_OWNER }}/filebrowser-deployment:${{ github.sha }}
           format: sarif
           output: trivy-results.sarif
           severity: CRITICAL,HIGH
@@ -65,9 +68,9 @@ jobs:
           category: trivy
 
       - name: Generate SBOM
-        uses: anchore/sbom-action@v0
+        uses: anchore/sbom-action@v0.18.0
         with:
-          image: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          image: ghcr.io/${{ env.GHCR_OWNER }}/filebrowser-deployment:${{ github.sha }}
           format: spdx-json
           output-file: sbom.spdx.json
 
@@ -81,11 +84,12 @@ jobs:
       - name: Push to GHCR
         if: github.ref == 'refs/heads/main'
         run: |
-          docker tag ghcr.io/${{ github.repository }}:${{ github.sha }} ghcr.io/${{ github.repository }}:latest
-          docker push ghcr.io/${{ github.repository }}:latest
-          docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
+          docker tag ghcr.io/${{ env.GHCR_OWNER }}/filebrowser-deployment:${{ github.sha }} \
+            ghcr.io/${{ env.GHCR_OWNER }}/filebrowser-deployment:latest
+          docker push ghcr.io/${{ env.GHCR_OWNER }}/filebrowser-deployment:latest
+          docker push ghcr.io/${{ env.GHCR_OWNER }}/filebrowser-deployment:${{ github.sha }}
 
       - name: Check image size
         run: |
-          IMG_SIZE=$(docker image inspect ghcr.io/${{ github.repository }}:${{ github.sha }} --format='{{.Size}}' | numfmt --to=iec)
+          IMG_SIZE=$(docker image inspect ghcr.io/${{ env.GHCR_OWNER }}/filebrowser-deployment:${{ github.sha }} --format='{{.Size}}' | numfmt --to=iec)
           echo "Image size: $IMG_SIZE"

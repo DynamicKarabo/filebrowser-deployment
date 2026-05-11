@@ -6,16 +6,16 @@
 # Stage 1: Build frontend
 FROM node:24-alpine AS frontend
 WORKDIR /src
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
+COPY src/frontend/package.json src/frontend/pnpm-lock.yaml ./
 RUN corepack enable && pnpm install --frozen-lockfile
-COPY frontend/ .
+COPY src/frontend/ .
 RUN pnpm build
 
 # Stage 2: Build Go binary
 FROM golang:1.25-alpine AS builder
 RUN apk add --no-cache git ca-certificates
 WORKDIR /src
-COPY . .
+COPY src/ .
 COPY --from=frontend /src/dist /src/frontend/dist
 RUN CGO_ENABLED=0 go build \
     -trimpath \
